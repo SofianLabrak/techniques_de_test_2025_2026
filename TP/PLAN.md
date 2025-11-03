@@ -42,7 +42,7 @@ La triangulation doit respecter la règle suivante, pour n point, on obtient n-2
 
 Des tests unitaires sur la partie API Web vont être nécessaires :
 
-- **Test des codes d'erreur** : vérifier la totalité des codes d'erreur des réponses HTTP (400, 404, 503)
+- **Test des codes d'erreur** : vérifier la totalité des codes d'erreur des réponses HTTP (400, 404, 503) cf. triangulator.xml
 - **Test de succès** : vérifier le succès de la requête et vérifier les informations reçues (200)
 
 ---
@@ -74,7 +74,7 @@ Nous allons aussi voir les performance de la sérialisation et désirialisation 
 
 - Test de Sérialisation/Désiarilisation avec **10 points**
 - Test de Sérialisation/Désiarilisation avec **100 points**
-- Test de Sérialisation/Désiarilisation avec **1000 points**
-- Test de Sérialisation/Désiarilisation avec **10000 points**
+- Test de Sérialisation/Désiarilisation avec **1 000 points**
+- Test de Sérialisation/Désiarilisation avec **10 000 points**
 
 > **Note** : Les chiffres et le nombre de tests restent modulables.
