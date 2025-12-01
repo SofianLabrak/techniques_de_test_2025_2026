@@ -5,7 +5,7 @@ from triangulator import Triangulator
 
 class TestTriangulator:
     def test_triangulation_avec_aucun_points(self):
-        # Test avec aucun point : doit lever une erreur
+        # Test avec aucun point
 
         ps = PointSet()
         triangulator = Triangulator(ps)
@@ -13,7 +13,7 @@ class TestTriangulator:
             triangulator.triangulate()
 
     def test_triangulation_avec_moins_de_3_points(self):
-        # Test avec moins de 3 points : doit lever une erreur
+        # Test avec moins de 3 points
 
         ps = PointSet([(0.0, 0.0), (1.0, 1.0)])
         triangulator = Triangulator(ps)
@@ -21,7 +21,7 @@ class TestTriangulator:
             triangulator.triangulate()
 
     def test_triangulation_avec_3_points(self):
-        # Test avec 3 points : forme 1 triangle (n-2 = 3-2 = 1)
+        # Test avec 3 points
 
         ps = PointSet([(0.0, 0.0), (1.0, 0.0), (0.5, 1.0)])
         triangulator = Triangulator(ps)
@@ -31,7 +31,7 @@ class TestTriangulator:
         assert triangles.count() == 1
 
     def test_triangulation_avec_4_points(self):
-        # Test avec 4 points : forme 2 triangles (n-2 = 4-2 = 2)
+        # Test avec 4 points
 
         ps = PointSet([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
         triangulator = Triangulator(ps)
@@ -41,7 +41,7 @@ class TestTriangulator:
         assert triangles.count() == 2
 
     def test_triangulation_avec_5_points(self):
-        # Test avec 5 points : forme 3 triangles (n-2 = 5-2 = 3)
+        # Test avec 5 points
 
         ps = PointSet([(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (1.0, 1.0), (1.0, -1.0)])
         triangulator = Triangulator(ps)
@@ -51,7 +51,7 @@ class TestTriangulator:
         assert triangles.count() == 3
 
     def test_triangulation_regle_n_minus_2(self):
-        # Vérifie la règle: pour n points, on obtient n-2 triangles
+        # Vérifie la règle pour n points, on obtient n-2 triangles
 
         for n in [3, 4, 5]:
             points = [(float(i), 0.0) for i in range(n)]
@@ -99,12 +99,11 @@ class TestTrianglesSerialization:
         assert deserialized.count() == 1
 
     def test_triangles_test_serialization_deserialization(self):
-        # Test aller-retour: sérialisation puis désérialisation
+        # Test sérialisation puis désérialisation
         ps = PointSet([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
         triangulator = Triangulator(ps)
         triangles = triangulator.triangulate()
         serialized = triangles.serialize()
         deserialized = triangles.deserialize(serialized)
         
-        # Doit avoir le même nombre de triangles
         assert deserialized.count() == triangles.count()
