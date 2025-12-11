@@ -1,4 +1,3 @@
-import pytest
 from point_set import PointSet
 
 
