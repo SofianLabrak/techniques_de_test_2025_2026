@@ -6,24 +6,18 @@ from triangulator import Triangulator
 
 class TestTriangulator:
     def test_triangulation_avec_aucun_points(self):
-        # Test avec aucun point
-
         point_set = PointSet()
         triangulator = Triangulator(point_set)
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             triangulator.triangulate()
 
     def test_triangulation_avec_moins_de_3_points(self):
-        # Test avec moins de 3 points
-
         point_set = PointSet([(0.0, 0.0), (1.0, 1.0)])
         triangulator = Triangulator(point_set)
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             triangulator.triangulate()
 
     def test_triangulation_avec_3_points(self):
-        # Test avec 3 points
-
         point_set = PointSet([(0.0, 0.0), (1.0, 0.0), (0.5, 1.0)])
         triangulator = Triangulator(point_set)
         triangles = triangulator.triangulate()
@@ -32,8 +26,6 @@ class TestTriangulator:
         assert len(triangles) == 1
 
     def test_triangulation_avec_4_points(self):
-        # Test avec 4 points
-
         point_set = PointSet([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
         triangulator = Triangulator(point_set)
         triangles = triangulator.triangulate()
@@ -42,9 +34,9 @@ class TestTriangulator:
         assert len(triangles) == 2
 
     def test_triangulation_avec_5_points(self):
-        # Test avec 5 points
-
-        point_set = PointSet([(0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (1.0, 1.0), (1.0, -1.0)])
+        point_set = PointSet([
+            (0.0, 0.0), (1.0, 0.0), (2.0, 0.0), (1.0, 1.0), (1.0, -1.0)
+        ])
         triangulator = Triangulator(point_set)
         triangles = triangulator.triangulate()
         # Doit retourner une liste de 3 triangles
@@ -62,11 +54,9 @@ class TestTriangulator:
             assert len(triangles) == n - 2
 
     def test_triangulation_avec_points_dupliques(self):
-        # Test de validation : pas de points dupliqués/identiques
-
         point_set = PointSet([(1.0, 1.0), (1.0, 1.0), (2.0, 2.0)])
         triangulator = Triangulator(point_set)
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             triangulator.triangulate()
 
 
@@ -83,7 +73,8 @@ class TestTrianglesSerialization:
 
         # Le résultat doit être binaire
         assert isinstance(result, bytes)
-        # Doit contenir la partie PointSet (4 + 3*8 = 28 bytes) + partie Triangles (4 + 1*12 = 16 bytes) = 44 bytes
+        # Doit contenir la partie PointSet (4 + 3*8 = 28 bytes)
+        # + partie Triangles (4 + 1*12 = 16 bytes) = 44 bytes
         assert len(result) == 28 + 16
 
     def test_deserialize_bytes_to_triangles(self):
@@ -94,7 +85,9 @@ class TestTrianglesSerialization:
         triangulator = Triangulator(point_set)
         triangles = triangulator.triangulate()
         serialized = Triangulator.serialize_triangles(point_set, triangles)
-        ps_deserialized, triangles_deserialized = Triangulator.deserialize_triangles(serialized)
+        ps_deserialized, triangles_deserialized = Triangulator.deserialize_triangles(
+            serialized
+        )
 
         # Doit avoir le même nombre de triangles
         assert len(triangles_deserialized) == 1

@@ -1,11 +1,19 @@
-# Lancer tous les tests
 test:
-	pytest -v
+	PYTHONPATH=.. pytest -v
 
-# Lancer uniquement les tests unitaires et intégration (sans performance)
 unit_test:
-	pytest -v -m "not perf"
+	PYTHONPATH=.. pytest -v -m "not perf"
 
-# Lancer uniquement les tests de performance
 perf_test:
-	pytest -v -m "perf"
+	PYTHONPATH=.. pytest -v -s -m "perf"
+
+lint:
+	ruff check ..
+
+coverage:
+	PYTHONPATH=.. coverage run --source=.. --omit="tests/*" -m pytest
+	coverage report
+	coverage html
+
+doc:
+	PYTHONPATH=.. pdoc --html --output-dir docs --force ../api.py ../point_set.py ../triangulator.py

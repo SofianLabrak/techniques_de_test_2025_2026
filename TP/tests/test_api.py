@@ -1,89 +1,79 @@
+import uuid
+from unittest.mock import patch
+
 import pytest
 
-class TestTriangulatorAPI200OK:
+from api import PointSetManagerError, PointSetNotFoundError, app
+from point_set import PointSet
+from triangulator import Triangulator
 
-    def test_triangulate_api_avec_pointset_id_valide(self):
-        # GET /triangulation/{pointSetId} avec UUID valide
-        # Le Triangulator récupère le PointSet du PointSetManager
-        # Retourne code 200 avec les Triangles en binaire
-        # Vérification : Code 200, données binaires valides
-        assert False, "requête avec UUID valide doit retourner 200 et Triangles"
+
+@pytest.fixture
+def client():
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
+
+
+class TestTriangulationAPI:
     
-class TestTriangulatorAPI400BadRequest:
+    def test_triangulation_succes(self, client):
+        ps_id = str(uuid.uuid4())
+        point_set = PointSet([(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)])
+        
+        with patch('api.get_pointset_from_manager', return_value=point_set):
+            response = client.get(f'/triangulation/{ps_id}')
+            
+            assert response.status_code == 200
+            assert response.mimetype == 'application/octet-stream'
+            
+            # Verify content
+            _, triangles = Triangulator.deserialize_triangles(response.data)
+            assert len(triangles) == 1
 
-    def test_triangulate_api_avec_format_pointset_id_invalide(self):
-        # GET /triangulation/{pointSetId} avec format UUID invalide
-        # Doit retourner 400 "Bad Request"
-        # Démarche : Utiliser "invalid-uuid" comme pointSetId
-        # Vérification : Code 400, message d'erreur
-        assert False, "format UUID invalide doit retourner 400"
+    def test_uuid_invalide(self, client):
+        response = client.get('/triangulation/invalid-uuid')
+        assert response.status_code == 400
+        assert "Format UUID invalide" in response.json['error']
 
-    def test_triangulate_api_avec_moins_de_3_points(self):
-        # GET /triangulation/{pointSetId} avec PointSet contenant < 3 points
-        # Doit retourner 400 "Bad Request" (impossible de triangulate)
-        # Démarche : Enregistrer un PointSet avec 1-2 points, demander triangulation
-        # Vérification : Code 400, message d'erreur
-        assert False, "PointSet < 3 points doit retourner 400"
+    def test_pointset_non_trouve(self, client):
+        ps_id = str(uuid.uuid4())
+        with patch('api.get_pointset_from_manager', side_effect=PointSetNotFoundError("PointSet non trouvé")):
+            response = client.get(f'/triangulation/{ps_id}')
+            assert response.status_code == 404
+            assert "PointSet non trouvé" in response.json['error']
 
-    def test_triangulate_api_avec_points_dupliques(self):
-        # GET /triangulation/{pointSetId} avec PointSet contenant points dupliqués
-        # Doit retourner 400 "Bad Request"
-        # Démarche : Enregistrer un PointSet avec doublons, demander triangulation
-        # Vérification : Code 400, message d'erreur
-        assert False, "points dupliqués doivent retourner 400"
+    def test_erreur_pointset_manager(self, client):
+        ps_id = str(uuid.uuid4())
+        with patch('api.get_pointset_from_manager', side_effect=PointSetManagerError("Erreur de connexion")):
+            response = client.get(f'/triangulation/{ps_id}')
+            assert response.status_code == 503
+            assert "Erreur de connexion" in response.json['error']
 
+    def test_erreur_triangulation_pas_assez_de_points(self, client):
+        ps_id = str(uuid.uuid4())
+        point_set = PointSet([(0.0, 0.0), (1.0, 0.0)]) # Only 2 points
+        
+        with patch('api.get_pointset_from_manager', return_value=point_set):
+            response = client.get(f'/triangulation/{ps_id}')
+            assert response.status_code == 400
+            assert "Besoin d'au moins 3 points" in response.json['error']
 
-class TestTriangulatorAPI404NotFound:
+    def test_erreur_triangulation_points_dupliques(self, client):
+        ps_id = str(uuid.uuid4())
+        point_set = PointSet([(0.0, 0.0), (0.0, 0.0), (1.0, 1.0)]) # Duplicates
+        
+        with patch('api.get_pointset_from_manager', return_value=point_set):
+            response = client.get(f'/triangulation/{ps_id}')
+            assert response.status_code == 400
+            assert "points dupliqués" in response.json['error']
 
-    def test_triangulate_api_avec_non_existant_pointset_id(self):
-        # GET /triangulation/{pointSetId} avec UUID valide mais inexistant
-        # Le PointSetManager retourne 404
-        # Le Triangulator doit retourner 404 Not Found avec message d'erreur JSON
-        # Démarche : Utiliser un UUID valide qui n'a jamais été enregistré
-        # Vérification : Code 404, message d'erreur
-        assert False, "UUID inexistant doit retourner 404"
-
-
-class TestTriangulatorAPI500InternalError:
-
-    def test_triangulate_api_triangulation_algorithm_echoue(self):
-        # GET /triangulation/{pointSetId} quand l'algorithme échoue
-        # Doit retourner 500 Internal Server Error avec message d'erreur JSON
-        # Démarche : Créer des conditions qui causent l'échec
-        # Vérification : Code 500, message d'erreur
-        assert False, "algorithme échoue doit retourner 500"
-
-
-class TestTriangulatorAPI503ServiceUnavailable:
-
-    def test_triangulate_api_quand_pointset_manager_indisponible(self):
-        # GET /triangulation/{pointSetId} quand PointSetManager est indisponible
-        # Doit retourner 503 Service Unavailable avec message d'erreur JSON
-        # Démarche : Arrêter le PointSetManager
-        # Vérification : Code 503, message d'erreur
-        assert False, "PointSetManager indisponible doit retourner 503"
-
-    def test_triangulate_api_connection_timeout(self):
-        # GET /triangulation/{pointSetId} avec timeout de connexion
-        # Doit retourner 503 Service Unavailable
-        # Démarche : Utiliser un service qui ne répond pas ou timeout
-        # Vérification : Code 503 message d'erreur
-        assert False, "timeout doit retourner 503"
-
-
-class TestTriangulatorAPIIntegration:
-
-    def test_complete_workflow_avec_pointset_manager(self):
-        # 1. Enregistrer un PointSet auprès du PointSetManager (POST /pointset)
-        # 2. Récupérer le PointSetID
-        # 3. Demander la triangulation au Triangulator (GET /triangulation/{pointSetId})
-        # 4. Vérifier que les triangles sont retournés correctement
-        # Vérification : Code 201 (POST), code 200, message d'erreur
-        assert False, "workflow complet doit fonctionner end-to-end"
-
-    def test_multiple_triangulations_avec_meme_pointset(self):
-        # Tester plusieurs requêtes de triangulation avec le même PointSetID
-        # Doit retourner les mêmes résultats
-        # Démarche : Faire 2-3 requêtes GET avec le même pointSetId
-        # Vérification : Tous les codes 200, message d'erreur
-        assert False, "requêtes multiples doivent retourner les mêmes résultats"
+    def test_erreur_interne_serveur(self, client):
+        ps_id = str(uuid.uuid4())
+        point_set = PointSet([(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)])
+        
+        with patch('api.get_pointset_from_manager', return_value=point_set):
+            with patch('api.Triangulator.triangulate', side_effect=Exception("Unexpected crash")):
+                response = client.get(f'/triangulation/{ps_id}')
+                assert response.status_code == 500
+                assert "Erreur interne du serveur" in response.json['error']
