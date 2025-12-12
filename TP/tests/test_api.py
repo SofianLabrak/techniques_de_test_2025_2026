@@ -38,14 +38,16 @@ class TestTriangulationAPI:
 
     def test_pointset_non_trouve(self, client):
         ps_id = str(uuid.uuid4())
-        with patch('api.get_pointset_from_manager', side_effect=PointSetNotFoundError("PointSet non trouvé")):
+        error = PointSetNotFoundError("PointSet non trouvé")
+        with patch('api.get_pointset_from_manager', side_effect=error):
             response = client.get(f'/triangulation/{ps_id}')
             assert response.status_code == 404
             assert "PointSet non trouvé" in response.json['error']
 
     def test_erreur_pointset_manager(self, client):
         ps_id = str(uuid.uuid4())
-        with patch('api.get_pointset_from_manager', side_effect=PointSetManagerError("Erreur de connexion")):
+        error = PointSetManagerError("Erreur de connexion")
+        with patch('api.get_pointset_from_manager', side_effect=error):
             response = client.get(f'/triangulation/{ps_id}')
             assert response.status_code == 503
             assert "Erreur de connexion" in response.json['error']
@@ -72,8 +74,11 @@ class TestTriangulationAPI:
         ps_id = str(uuid.uuid4())
         point_set = PointSet([(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)])
         
-        with patch('api.get_pointset_from_manager', return_value=point_set):
-            with patch('api.Triangulator.triangulate', side_effect=Exception("Unexpected crash")):
-                response = client.get(f'/triangulation/{ps_id}')
-                assert response.status_code == 500
-                assert "Erreur interne du serveur" in response.json['error']
+        with patch('api.get_pointset_from_manager', return_value=point_set), \
+             patch(
+                 'api.Triangulator.triangulate',
+                 side_effect=Exception("Unexpected crash")
+             ):
+            response = client.get(f'/triangulation/{ps_id}')
+            assert response.status_code == 500
+            assert "Erreur interne du serveur" in response.json['error']

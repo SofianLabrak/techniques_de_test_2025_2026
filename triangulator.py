@@ -2,12 +2,14 @@ import struct
 
 from point_set import PointSet
 
+Triangle = tuple[int, int, int]
+
 
 class Triangulator:
     def __init__(self, point_set: PointSet):
         self.point_set = point_set
 
-    def triangulate(self) -> list[tuple[int, int, int]]:
+    def triangulate(self) -> list[Triangle]:
         nombre_points = self.point_set.count()
         
         if nombre_points == 0:
@@ -31,7 +33,7 @@ class Triangulator:
         return liste_triangles
 
     @staticmethod
-    def serialize_triangles(point_set: PointSet, triangles: list[tuple[int, int, int]]) -> bytes:
+    def serialize_triangles(point_set: PointSet, triangles: list[Triangle]) -> bytes:
         tampon = bytearray()
         
         tampon.extend(point_set.serialize())
@@ -44,7 +46,7 @@ class Triangulator:
         return bytes(tampon)
 
     @staticmethod
-    def deserialize_triangles(donnees: bytes) -> tuple[PointSet, list[tuple[int, int, int]]]:
+    def deserialize_triangles(donnees: bytes) -> tuple[PointSet, list[Triangle]]:
         if len(donnees) < 4:
             raise ValueError("Données invalides pour Triangles")
             
