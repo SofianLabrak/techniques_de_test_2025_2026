@@ -41,10 +41,10 @@ def triangulate(point_set_id):
 
     try:
         point_set = get_pointset_from_manager(point_set_id)
-        
+
         triangulator = Triangulator(point_set)
         triangles = triangulator.triangulate()
-        
+
         return Response(
             Triangulator.serialize_triangles(point_set, triangles),
             mimetype='application/octet-stream'

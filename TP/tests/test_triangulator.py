@@ -1,4 +1,5 @@
 import pytest
+import struct
 
 from point_set import PointSet
 from triangulator import Triangulator
@@ -94,3 +95,26 @@ class TestTrianglesSerialization:
         # Doit avoir le même nombre de points
         assert ps_deserialized.count() == 3
 
+    def test_deserialize_header_invalide(self):
+        # Données trop courtes (< 4 octets)
+        data = b'\x00\x00'
+        with pytest.raises(ValueError, match="Données invalides pour Triangles"):
+            Triangulator.deserialize_triangles(data)
+
+    def test_deserialize_points_tronques(self):
+        # 10 points déclarés + données incomplètes (2 octets contre 80 attendus)
+        data = struct.pack('>I', 10) + b'\x00\x00'
+        with pytest.raises(ValueError, match="Données tronquées pour les points"):
+            Triangulator.deserialize_triangles(data)
+
+    def test_deserialize_compteur_triangles_manquant(self):
+        # 0 points, mais manque le compteur de triangles
+        data = struct.pack('>I', 0)
+        with pytest.raises(ValueError, match="Données tronquées : compteur de triangles manquant"):
+            Triangulator.deserialize_triangles(data)
+
+    def test_deserialize_triangles_tronques(self):
+        # 0 points + 1 triangle déclaré + données incomplètes (2 octets contre 12 attendus)
+        data = struct.pack('>I', 0) + struct.pack('>I', 1) + b'\x00\x00'
+        with pytest.raises(ValueError, match="Données tronquées pour les triangles"):
+            Triangulator.deserialize_triangles(data)
